@@ -12,13 +12,7 @@ import labelsRoutes from "./routes/labels.js";
 
 // Swagger setup
 import swaggerUi from "swagger-ui-express";
-import { readFileSync } from "fs";
-import { join, dirname } from "path";
-import { fileURLToPath } from "url";
-import yaml from "yaml";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+import { openApiSpec } from "./docs/openapiSpec.js";
 
 /**
  * Build and configure Express application
@@ -56,46 +50,11 @@ export function buildExpressApp(providedConfig?: EnvConfig): Express {
     next();
   });
 
-  // Swagger UI
-  try {
-    // Handle both local development and Vercel serverless environments
-    let openApiContent: string | null = null;
-    
-    // Try multiple path strategies for serverless compatibility
-    const pathAttempts = [
-      // Vercel serverless function path
-      join(process.cwd(), "src", "docs", "openapi.yaml"),
-      // Local development path
-      join(__dirname, "docs", "openapi.yaml"),
-      // Alternative serverless path
-      join(process.cwd(), ".", "src", "docs", "openapi.yaml"),
-    ];
-    
-    for (const attemptPath of pathAttempts) {
-      try {
-        openApiContent = readFileSync(attemptPath, "utf-8");
-        break;
-      } catch {
-        // Try next path
-        continue;
-      }
-    }
-    
-    if (!openApiContent) {
-      throw new Error(`OpenAPI spec not found. Tried: ${pathAttempts.join(", ")}`);
-    }
-    
-    const openApiSpec = yaml.parse(openApiContent);
-
-    app.use("/docs", swaggerUi.serve, swaggerUi.setup(openApiSpec, {
-      customCss: ".swagger-ui .topbar { display: none }",
-      customSiteTitle: "LabelGuard API Documentation",
-    }));
-  } catch (error) {
-    console.warn("Failed to load OpenAPI spec:", error instanceof Error ? error.message : String(error));
-    // Continue without Swagger UI in case of errors
-    // The API endpoints will still work
-  }
+  // Swagger UI - using embedded OpenAPI spec for serverless compatibility
+  app.use("/docs", swaggerUi.serve, swaggerUi.setup(openApiSpec, {
+    customCss: ".swagger-ui .topbar { display: none }",
+    customSiteTitle: "LabelGuard API Documentation",
+  }));
 
   // Root route - API information
   app.get("/", (_req, res) => {
