@@ -1,0 +1,205 @@
+{
+  "info": {
+    "name": "LabelGuard API",
+    "description": "API collection for LabelGuard - USDA food search and label validation",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            },
+            "description": "Returns server status, uptime, and timestamp"
+          }
+        },
+        {
+          "name": "Liveness Probe",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health/liveness",
+              "host": ["{{baseUrl}}"],
+              "path": ["health", "liveness"]
+            }
+          }
+        },
+        {
+          "name": "Readiness Probe",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health/readiness",
+              "host": ["{{baseUrl}}"],
+              "path": ["health", "readiness"]
+            }
+          }
+        },
+        {
+          "name": "Metrics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health/metrics",
+              "host": ["{{baseUrl}}"],
+              "path": ["health", "metrics"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Foods",
+      "item": [
+        {
+          "name": "Search Foods",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/foods?q=greek yogurt&limit=5",
+              "host": ["{{baseUrl}}"],
+              "path": ["foods"],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "greek yogurt",
+                  "description": "Search query"
+                },
+                {
+                  "key": "limit",
+                  "value": "5",
+                  "description": "Maximum results (1-50)"
+                },
+                {
+                  "key": "dataType",
+                  "value": "Branded,SR Legacy",
+                  "description": "Filter by data type (comma-separated)",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Search for foods in USDA FoodData Central"
+          }
+        },
+        {
+          "name": "Search Foods - Branded Only",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/foods?q=chocolate&limit=10&dataType=Branded",
+              "host": ["{{baseUrl}}"],
+              "path": ["foods"],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "chocolate"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "dataType",
+                  "value": "Branded"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Labels",
+      "item": [
+        {
+          "name": "Validate Label - Basic",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"labelText\": \"Ingredients: milk, cultures. Contains live cultures.\",\n  \"declaredAllergens\": [\"milk\"],\n  \"servingSize\": {\n    \"value\": 170,\n    \"unit\": \"g\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/labels/validate",
+              "host": ["{{baseUrl}}"],
+              "path": ["labels", "validate"]
+            },
+            "description": "Basic label validation without claims"
+          }
+        },
+        {
+          "name": "Validate Label - With Claims",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"labelText\": \"Ingredients: milk, cultures. Contains live cultures. High protein, low fat.\",\n  \"declaredAllergens\": [\"milk\"],\n  \"servingSize\": {\n    \"value\": 170,\n    \"unit\": \"g\"\n  },\n  \"referenceFoodQuery\": \"greek yogurt\",\n  \"claimTexts\": [\"high protein\", \"low fat\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/labels/validate",
+              "host": ["{{baseUrl}}"],
+              "path": ["labels", "validate"]
+            },
+            "description": "Validate label with product claims and USDA context"
+          }
+        },
+        {
+          "name": "Validate Label - Missing Allergen",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"labelText\": \"Ingredients: milk, soy, sugar, vanilla extract.\",\n  \"declaredAllergens\": [\"milk\"],\n  \"servingSize\": {\n    \"value\": 100,\n    \"unit\": \"g\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/labels/validate",
+              "host": ["{{baseUrl}}"],
+              "path": ["labels", "validate"]
+            },
+            "description": "Example showing undeclared allergen detection"
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    }
+  ]
+}
+
