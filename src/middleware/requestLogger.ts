@@ -3,20 +3,31 @@ import pino from "pino";
 import { generateRequestId, getRequestId, withRequestId } from "../utils/tracing.js";
 import { recordRequest } from "../utils/metrics.js";
 
-const logger = pino({
+// Configure logger based on environment
+// In Vercel/serverless/production, use JSON output
+// In development, use pino-pretty for readable output
+const isDevelopment = 
+  process.env.NODE_ENV === "development" && 
+  !process.env.VERCEL;
+
+const loggerConfig: pino.LoggerOptions = {
   level: process.env.LOG_LEVEL || "info",
-  transport:
-    process.env.NODE_ENV !== "production"
-      ? {
-          target: "pino-pretty",
-          options: {
-            colorize: true,
-            translateTime: "HH:MM:ss Z",
-            ignore: "pid,hostname",
-          },
-        }
-      : undefined,
-});
+};
+
+// Only use pino-pretty in development (not in Vercel or production)
+// In production/Vercel, pino will use default JSON output
+if (isDevelopment) {
+  loggerConfig.transport = {
+    target: "pino-pretty",
+    options: {
+      colorize: true,
+      translateTime: "HH:MM:ss Z",
+      ignore: "pid,hostname",
+    },
+  };
+}
+
+const logger = pino(loggerConfig);
 
 /**
  * Request logging middleware with request ID
