@@ -23,35 +23,35 @@ Production-grade REST API for USDA food search and food label validation. Search
        │
        ▼
 ┌─────────────────────────────────────┐
-│         Express Server               │
-│  ┌───────────────────────────────┐   │
-│  │  Middleware Stack            │   │
-│  │  - Security (Helmet, CORS)    │   │
-│  │  - Rate Limiting             │   │
-│  │  - Request Logging           │   │
-│  │  - Error Handling            │   │
-│  └───────────────────────────────┘   │
-│                                       │
-│  ┌──────────┐  ┌──────────┐          │
-│  │  Routes  │→ │Controllers│          │
-│  └──────────┘  └────┬──────┘          │
-│                     │                  │
-│  ┌──────────────────▼──────────────┐   │
-│  │         Services                │   │
-│  │  - USDA Service                 │   │
-│  │  - Validation Service            │   │
-│  └─────────────────────────────────┘   │
-│                     │                  │
-│  ┌──────────────────▼──────────────┐   │
-│  │         Domain Types            │   │
-│  │  - Zod Schemas                  │   │
-│  │  - TypeScript Types             │   │
-│  └─────────────────────────────────┘   │
-└─────────────────────────────────────────┘
+│         Express Server              │
+│  ┌───────────────────────────────┐  │
+│  │  Middleware Stack             │  │
+│  │  - Security (Helmet, CORS)    │  │
+│  │  - Rate Limiting              │  │
+│  │  - Request Logging            │  │
+│  │  - Error Handling             |  │
+│  └───────────────────────────────┘  │
+│                                     │
+│  ┌──────────┐  ┌──────────┐         │
+│  │  Routes  │→ │Controllers│        │
+│  └──────────┘  └────┬──────┘        │
+│                     │               │
+│  ┌──────────────────▼──────────────┐│
+│  │         Services                ││
+│  │  - USDA Service                 ││
+│  │  - Validation Service           │|
+│  └─────────────────────────────────┘│
+│                     │               |
+│  ┌──────────────────▼──────────────┐│
+│  │         Domain Types            ││
+│  │  - Zod Schemas                  │|
+│  │  - TypeScript Types             ││
+│  └─────────────────────────────────┘│
+└─────────────────────────────────────┘
            │
            ▼
     ┌──────────────┐
-    │ USDA API    │
+    │   USDA API   │
     └──────────────┘
 ```
 
@@ -67,7 +67,7 @@ Production-grade REST API for USDA food search and food label validation. Search
 
 1. Clone the repository:
 ```bash
-git clone <repository-url>
+git clone https://github.com/JohanLiebertTheRealOne/LabelGuard-API
 cd labelguard-api
 ```
 
