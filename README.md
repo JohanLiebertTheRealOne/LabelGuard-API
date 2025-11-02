@@ -385,6 +385,42 @@ Interactive API documentation is available at `/docs` when the server is running
 
 ## Deployment
 
+### Vercel (Recommended)
+
+**Quick Deploy:**
+
+1. Install Vercel CLI: `npm i -g vercel`
+2. Login: `vercel login`
+3. Deploy: `vercel` (follow prompts)
+4. Set environment variables in Vercel dashboard:
+   - `USDA_API_KEY` (required)
+   - `CORS_ORIGIN` (optional)
+   - `RATE_LIMIT_WINDOW_MS` (optional)
+   - `RATE_LIMIT_MAX` (optional)
+   - `TRUST_PROXY` (optional, set to `true` if needed)
+
+**Via Vercel Dashboard:**
+
+1. Import your GitHub repository in [Vercel Dashboard](https://vercel.com/dashboard)
+2. Vercel will auto-detect the project settings
+3. Add environment variables:
+   - Go to Project Settings → Environment Variables
+   - Add: `USDA_API_KEY` with your API key
+   - Optionally add other variables (CORS_ORIGIN, etc.)
+4. Click "Deploy"
+
+**Important Notes:**
+- The API is configured as a serverless function in `api/index.ts`
+- Environment variables must be set in Vercel dashboard (not `.env`)
+- Vercel automatically handles HTTPS and CDN
+- Cold starts may add ~100-500ms latency on first request
+
+**Local Vercel Testing:**
+```bash
+vercel dev
+```
+This runs your app locally with Vercel's serverless environment.
+
 ### Render
 
 1. Connect your repository

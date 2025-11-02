@@ -1,0 +1,20 @@
+# Files and directories to ignore when deploying to Vercel
+
+node_modules
+dist
+coverage
+.git
+.env
+.env.local
+.env.*.local
+*.log
+*.tmp
+test
+.vscode
+.idea
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+

@@ -57,7 +57,19 @@ export function buildExpressApp(): Express {
 
   // Swagger UI
   try {
-    const openApiPath = join(__dirname, "docs", "openapi.yaml");
+    // Handle both local development and Vercel serverless environments
+    let openApiPath: string;
+    try {
+      // Try relative path first (works in serverless)
+      openApiPath = join(process.cwd(), "src", "docs", "openapi.yaml");
+      if (!readFileSync(openApiPath, "utf-8")) {
+        throw new Error("File not found");
+      }
+    } catch {
+      // Fallback to __dirname (works in local dev)
+      openApiPath = join(__dirname, "docs", "openapi.yaml");
+    }
+    
     const openApiContent = readFileSync(openApiPath, "utf-8");
     const openApiSpec = yaml.parse(openApiContent);
 
