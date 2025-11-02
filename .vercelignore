@@ -17,4 +17,8 @@ test
 *~
 .DS_Store
 Thumbs.db
+.eslintrc.cjs
+eslint.config.js
+*.config.js
+vitest.config.ts
 
