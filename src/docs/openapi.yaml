@@ -25,6 +25,39 @@ tags:
     description: Validate food labels for compliance
 
 paths:
+  /:
+    get:
+      tags:
+        - Health
+      summary: API root
+      description: Returns API information and available endpoints
+      operationId: getRoot
+      responses:
+        "200":
+          description: API information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  name:
+                    type: string
+                  version:
+                    type: string
+                  description:
+                    type: string
+                  endpoints:
+                    type: object
+              example:
+                name: "LabelGuard API"
+                version: "1.0.0"
+                description: "Production-grade REST API for USDA food search and label validation"
+                endpoints:
+                  health: "/health"
+                  foods: "/foods"
+                  labels: "/labels/validate"
+                  docs: "/docs"
+
   /health:
     get:
       tags:

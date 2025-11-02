@@ -58,19 +58,32 @@ export function buildExpressApp(): Express {
   // Swagger UI
   try {
     // Handle both local development and Vercel serverless environments
-    let openApiPath: string;
-    try {
-      // Try relative path first (works in serverless)
-      openApiPath = join(process.cwd(), "src", "docs", "openapi.yaml");
-      if (!readFileSync(openApiPath, "utf-8")) {
-        throw new Error("File not found");
+    let openApiContent: string | null = null;
+    
+    // Try multiple path strategies for serverless compatibility
+    const pathAttempts = [
+      // Vercel serverless function path
+      join(process.cwd(), "src", "docs", "openapi.yaml"),
+      // Local development path
+      join(__dirname, "docs", "openapi.yaml"),
+      // Alternative serverless path
+      join(process.cwd(), ".", "src", "docs", "openapi.yaml"),
+    ];
+    
+    for (const attemptPath of pathAttempts) {
+      try {
+        openApiContent = readFileSync(attemptPath, "utf-8");
+        break;
+      } catch {
+        // Try next path
+        continue;
       }
-    } catch {
-      // Fallback to __dirname (works in local dev)
-      openApiPath = join(__dirname, "docs", "openapi.yaml");
     }
     
-    const openApiContent = readFileSync(openApiPath, "utf-8");
+    if (!openApiContent) {
+      throw new Error(`OpenAPI spec not found. Tried: ${pathAttempts.join(", ")}`);
+    }
+    
     const openApiSpec = yaml.parse(openApiContent);
 
     app.use("/docs", swaggerUi.serve, swaggerUi.setup(openApiSpec, {
@@ -78,9 +91,29 @@ export function buildExpressApp(): Express {
       customSiteTitle: "LabelGuard API Documentation",
     }));
   } catch (error) {
-    console.warn("Failed to load OpenAPI spec:", error);
+    console.warn("Failed to load OpenAPI spec:", error instanceof Error ? error.message : String(error));
     // Continue without Swagger UI in case of errors
+    // The API endpoints will still work
   }
+
+  // Root route - API information
+  app.get("/", (_req, res) => {
+    res.json({
+      name: "LabelGuard API",
+      version: "1.0.0",
+      description: "Production-grade REST API for USDA food search and label validation",
+      endpoints: {
+        health: "/health",
+        foods: "/foods",
+        labels: "/labels/validate",
+        docs: "/docs",
+      },
+      documentation: {
+        openapi: "/docs",
+        postman: "See postman/LabelGuard.postman_collection.json",
+      },
+    });
+  });
 
   // Health check (no rate limiting)
   app.use("/health", healthRoutes);
