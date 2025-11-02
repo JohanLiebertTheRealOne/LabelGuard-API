@@ -30,10 +30,10 @@ function getApp() {
     try {
       // Load configuration first (reads from process.env)
       // This will throw if USDA_API_KEY is missing
-      loadConfig();
+      const config = loadConfig();
       
-      // Build the Express app
-      app = buildExpressApp();
+      // Build the Express app with the loaded config
+      app = buildExpressApp(config);
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
       console.error("Failed to initialize app:", err.message);
@@ -65,6 +65,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     
     // Ensure the request URL is set correctly for Express routing
     // Vercel rewrites can affect the original URL
+    const originalUrl = req.url;
     if (!req.url || req.url.startsWith("/api")) {
       // If URL starts with /api, remove it for Express routing
       req.url = req.url?.replace(/^\/api/, "") || req.url || "/";
@@ -76,33 +77,48 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       try {
         expressApp(req as any, res as any, (err?: any) => {
           if (err) {
-            console.error("Express error:", err);
+            console.error("Express error:", {
+              message: err?.message,
+              stack: err?.stack,
+              url: originalUrl,
+            });
             reject(err);
           } else {
             resolve();
           }
         });
       } catch (err) {
-        console.error("Handler error:", err);
+        console.error("Handler error:", {
+          message: err instanceof Error ? err.message : String(err),
+          stack: err instanceof Error ? err.stack : undefined,
+          url: originalUrl,
+        });
         reject(err);
       }
     });
   } catch (error) {
     // Handle initialization errors
     const err = error instanceof Error ? error : new Error(String(error));
-    console.error("Handler initialization error:", err.message);
+    console.error("Handler initialization error:", {
+      message: err.message,
+      stack: err.stack,
+      name: err.name,
+      url: req.url || "/",
+    });
     
     // Return a proper error response
-    res.status(500).json({
-      type: "https://labelguard.api/errors/INTERNAL_ERROR",
-      title: "Server initialization failed",
-      status: 500,
-      detail: process.env.NODE_ENV === "production" 
-        ? "Server failed to initialize. Check logs for details."
-        : err.message,
-      instance: req.url || "/",
-      code: "INIT_ERROR",
-    });
+    if (!res.headersSent) {
+      res.status(500).json({
+        type: "https://labelguard.api/errors/INTERNAL_ERROR",
+        title: "Server initialization failed",
+        status: 500,
+        detail: process.env.NODE_ENV === "production" 
+          ? "Server failed to initialize. Check logs for details."
+          : err.message,
+        instance: req.url || "/",
+        code: "INIT_ERROR",
+      });
+    }
     
     return;
   }

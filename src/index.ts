@@ -11,8 +11,8 @@ async function bootstrap(): Promise<void> {
     // Load and validate environment configuration
     const config = loadConfig();
 
-    // Build Express app
-    const app = buildExpressApp();
+    // Build Express app with the loaded config
+    const app = buildExpressApp(config);
 
     // Start server
     const server = app.listen(config.PORT, () => {

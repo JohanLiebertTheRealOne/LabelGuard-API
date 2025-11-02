@@ -1,20 +1,14 @@
 import type { Express } from "express";
 import helmet from "helmet";
 import cors from "cors";
-import { getConfig } from "../config/env.js";
+import type { EnvConfig } from "../config/env.js";
 
 /**
  * Configure security middleware (Helmet + CORS)
- * Note: This function expects config to be loaded before being called
+ * @param app - Express app instance
+ * @param config - Environment configuration
  */
-export function setupSecurity(app: Express): void {
-  let config;
-  try {
-    config = getConfig();
-  } catch (error) {
-    // Config not loaded yet, use defaults or throw
-    throw new Error("Configuration must be loaded before setting up security middleware. Call loadConfig() first.");
-  }
+export function setupSecurity(app: Express, config: EnvConfig): void {
 
   // Helmet for security headers
   app.use(

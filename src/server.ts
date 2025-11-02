@@ -3,7 +3,7 @@ import { setupSecurity } from "./middleware/security.js";
 import { requestLogger } from "./middleware/requestLogger.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { notFound } from "./middleware/notFound.js";
-import { getConfig } from "./config/env.js";
+import { getConfig, type EnvConfig } from "./config/env.js";
 
 // Routes
 import healthRoutes from "./routes/health.js";
@@ -22,10 +22,11 @@ const __dirname = dirname(__filename);
 
 /**
  * Build and configure Express application
+ * @param providedConfig - Optional config. If not provided, will try to get from getConfig()
  */
-export function buildExpressApp(): Express {
+export function buildExpressApp(providedConfig?: EnvConfig): Express {
   const app = express();
-  const config = getConfig();
+  const config = providedConfig || getConfig();
 
   // Trust proxy (if configured)
   if (config.TRUST_PROXY) {
@@ -34,8 +35,8 @@ export function buildExpressApp(): Express {
     app.set("trust proxy", false);
   }
 
-  // Security middleware (Helmet, CORS)
-  setupSecurity(app);
+  // Security middleware (Helmet + CORS)
+  setupSecurity(app, config);
 
   // Request logging (must come early)
   app.use(requestLogger);
