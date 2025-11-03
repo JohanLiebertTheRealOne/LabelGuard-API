@@ -11,13 +11,16 @@ import type { EnvConfig } from "../config/env.js";
 export function setupSecurity(app: Express, config: EnvConfig): void {
 
   // Helmet for security headers
+  // Note: CSP is relaxed for /docs to allow Swagger UI to work
   app.use(
     helmet({
       contentSecurityPolicy: {
         directives: {
           defaultSrc: ["'self'"],
-          styleSrc: ["'self'", "'unsafe-inline'"], // Allow inline styles for Swagger UI
+          styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"], // Allow inline styles for Swagger UI
           scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // Allow for Swagger UI
+          fontSrc: ["'self'", "https://fonts.gstatic.com"],
+          imgSrc: ["'self'", "data:", "https:"],
         },
       },
       crossOriginEmbedderPolicy: false,

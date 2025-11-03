@@ -51,10 +51,43 @@ export function buildExpressApp(providedConfig?: EnvConfig): Express {
   });
 
   // Swagger UI - using embedded OpenAPI spec for serverless compatibility
-  app.use("/docs", swaggerUi.serve, swaggerUi.setup(openApiSpec, {
-    customCss: ".swagger-ui .topbar { display: none }",
-    customSiteTitle: "LabelGuard API Documentation",
-  }));
+  // Temporarily disable Helmet CSP for Swagger UI routes
+  app.use("/docs", (req, res, next) => {
+    // Disable CSP for Swagger UI
+    res.setHeader("Content-Security-Policy", 
+      "default-src 'self'; " +
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; " +
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+      "font-src 'self' https://fonts.gstatic.com; " +
+      "img-src 'self' data: https:; " +
+      "connect-src 'self'"
+    );
+    next();
+  });
+  
+  try {
+    const swaggerSpec = JSON.parse(JSON.stringify(openApiSpec));
+    
+    // Serve Swagger UI assets and setup
+    app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+      customCss: ".swagger-ui .topbar { display: none }",
+      customSiteTitle: "LabelGuard API Documentation",
+      swaggerOptions: {
+        persistAuthorization: true,
+        displayRequestDuration: true,
+        filter: true,
+        tryItOutEnabled: true,
+      },
+    }));
+    
+    // Optional: serve raw spec JSON for debugging
+    app.get("/docs/openapi.json", (_req, res) => {
+      res.json(swaggerSpec);
+    });
+  } catch (error) {
+    console.error("Failed to setup Swagger UI:", error instanceof Error ? error.message : String(error));
+    // Continue without Swagger UI - API will still work
+  }
 
   // Root route - API information
   app.get("/", (_req, res) => {
