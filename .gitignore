@@ -18,6 +18,7 @@ pino-pretty
 # Testing
 coverage/
 .nyc_output/
+API_examples.md
 
 # IDE
 .vscode/

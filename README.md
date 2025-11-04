@@ -421,6 +421,35 @@ vercel dev
 ```
 This runs your app locally with Vercel's serverless environment.
 
+### Vercel Deployment Protection
+
+If you see an "Authentication Required" page when accessing your preview deployment, this is due to Vercel's deployment protection feature.
+
+**To disable deployment protection:**
+
+1. Go to [Vercel Dashboard](https://vercel.com/dashboard)
+2. Select your project
+3. Go to **Settings** → **Deployment Protection**
+4. Find your protected environment (Preview/Branch)
+5. Click to disable protection for that environment
+6. Or set it to "No Protection" for preview deployments
+
+**Alternative: Use bypass token for testing**
+
+If you need to keep protection enabled but want to test via API clients:
+
+1. Get bypass token: Project Settings → Deployment Protection → Copy bypass token
+2. Add token to your requests:
+   ```bash
+   curl "https://your-deployment.vercel.app/health?x-vercel-protection-bypass=YOUR_BYPASS_TOKEN"
+   ```
+   
+   Or in Postman:
+   - Add query parameter: `x-vercel-protection-bypass` = `YOUR_BYPASS_TOKEN`
+   - Or set cookie: `x-vercel-protection-bypass` = `YOUR_BYPASS_TOKEN`
+
+**Note:** Production deployments (main branch) typically don't have this protection unless explicitly enabled.
+
 ### Render
 
 1. Connect your repository
