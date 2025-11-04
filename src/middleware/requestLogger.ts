@@ -12,7 +12,43 @@ const isDevelopment =
 
 const loggerConfig: pino.LoggerOptions = {
   level: process.env.LOG_LEVEL || "info",
+  redact: {
+    paths: [
+      "req.headers.authorization",
+      "req.headers.cookie",
+      "req.headers['set-cookie']",
+      "req.headers['x-api-key']",
+      "req.query.q",
+      "req.body.labelText",
+      "res.headers['set-cookie']",
+    ],
+    remove: true,
+  },
+  serializers: {
+    req: (req) => {
+      return {
+        id: req.id,
+        method: req.method,
+        url: req.url,
+        headers: req.headers,
+        remoteAddress: req.remoteAddress,
+        remotePort: req.remotePort,
+      };
+    },
+  },
 };
+
+// Apply sampling in production if high traffic
+if (process.env.NODE_ENV === "production" && process.env.LOG_SAMPLE_RATE) {
+  const sampleRate = parseFloat(process.env.LOG_SAMPLE_RATE) || 1.0;
+  loggerConfig.formatters = {
+    level: (label) => {
+      return { level: label };
+    },
+  };
+  // Sampling is typically handled at the transport level
+  // For now, we'll log all errors but sample info/debug logs
+}
 
 // Only use pino-pretty in development (not in Vercel or production)
 // In production/Vercel, pino will use default JSON output

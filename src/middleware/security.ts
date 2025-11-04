@@ -12,9 +12,12 @@ export function setupSecurity(app: Express, config: EnvConfig): void {
 
   // Helmet for security headers
   // Note: CSP is relaxed for /docs to allow Swagger UI to work
+  const cspReportOnly = process.env.CSP_REPORT_ONLY === "1" || process.env.CSP_REPORT_ONLY === "true";
+  
   app.use(
     helmet({
       contentSecurityPolicy: {
+        reportOnly: cspReportOnly,
         directives: {
           defaultSrc: ["'self'"],
           styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"], // Allow inline styles for Swagger UI
@@ -24,8 +27,18 @@ export function setupSecurity(app: Express, config: EnvConfig): void {
         },
       },
       crossOriginEmbedderPolicy: false,
+      referrerPolicy: { policy: "no-referrer" },
     })
   );
+
+  // Set Permissions-Policy header separately (Helmet doesn't support it directly)
+  app.use((_req, res, next) => {
+    res.setHeader(
+      "Permissions-Policy",
+      "geolocation=(), camera=(), microphone=(), payment=()"
+    );
+    next();
+  });
 
   // CORS configuration
   if (config.CORS_ORIGIN.length > 0) {

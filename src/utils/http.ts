@@ -75,6 +75,9 @@ export const HttpErrors = {
   conflict: (message: string, detail?: string) =>
     new HttpError(409, "CONFLICT", message, detail),
 
+  tooManyRequests: (message = "Too many requests", detail?: string) =>
+    new HttpError(429, "TOO_MANY_REQUESTS", message, detail),
+
   internal: (message = "Internal server error", detail?: string) =>
     new HttpError(500, "INTERNAL_ERROR", message, detail),
 

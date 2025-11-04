@@ -9,6 +9,9 @@ import { getConfig, type EnvConfig } from "./config/env.js";
 import healthRoutes from "./routes/health.js";
 import foodsRoutes from "./routes/foods.js";
 import labelsRoutes from "./routes/labels.js";
+import v1Routes from "./routes/v1/index.js";
+import { apiVersioning } from "./middleware/versioning.js";
+import { abortController } from "./middleware/abortController.js";
 
 // Swagger setup
 import swaggerUi from "swagger-ui-express";
@@ -49,6 +52,9 @@ export function buildExpressApp(providedConfig?: EnvConfig): Express {
     }
     next();
   });
+
+  // AbortController middleware for request cancellation
+  app.use(abortController);
 
   // Swagger UI - using embedded OpenAPI spec for serverless compatibility
   // Temporarily disable Helmet CSP for Swagger UI routes
@@ -111,9 +117,25 @@ export function buildExpressApp(providedConfig?: EnvConfig): Express {
   // Health check (no rate limiting)
   app.use("/health", healthRoutes);
 
-  // API routes
-  app.use("/foods", foodsRoutes);
-  app.use("/labels", labelsRoutes);
+  // API v1 routes (versioned)
+  app.use("/v1", apiVersioning, v1Routes);
+
+  // Legacy routes (deprecated - add warning headers)
+  app.use("/foods", (req, res, next) => {
+    res.setHeader("X-Deprecated", "true");
+    res.setHeader("X-Deprecated-Since", "2024-01-01");
+    res.setHeader("X-Migration-Path", "/v1/foods");
+    res.setHeader("X-API-Version", "1");
+    next();
+  }, foodsRoutes);
+
+  app.use("/labels", (req, res, next) => {
+    res.setHeader("X-Deprecated", "true");
+    res.setHeader("X-Deprecated-Since", "2024-01-01");
+    res.setHeader("X-Migration-Path", "/v1/labels");
+    res.setHeader("X-API-Version", "1");
+    next();
+  }, labelsRoutes);
 
   // 404 handler (must come before error handler)
   app.use(notFound);

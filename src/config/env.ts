@@ -18,6 +18,10 @@ const envSchema = z.object({
     .optional()
     .default("false")
     .transform((val) => val === "true" || val === "1"),
+  CACHE_BACKEND: z.enum(["lru", "kv", "redis"]).optional().default("lru"),
+  CACHE_TTL_MS: z.coerce.number().int().positive().default(60000),
+  CACHE_MAX_SIZE: z.coerce.number().int().positive().default(1000),
+  REDIS_URL: z.string().url().optional(),
 });
 
 export type EnvConfig = z.infer<typeof envSchema>;

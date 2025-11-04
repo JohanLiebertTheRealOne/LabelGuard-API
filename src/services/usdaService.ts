@@ -3,9 +3,15 @@ import type { FoodSummary, SearchParams, SearchResult } from "../domain/food.js"
 import { FoodSchema, SearchResponseSchema } from "../domain/food.js";
 import { HttpError, HttpErrors } from "../utils/http.js";
 import { getConfig } from "../config/env.js";
+import { getCacheProvider } from "../cache/index.js";
+import stringify from "fast-json-stable-stringify";
+import { USDAClient } from "../http/usdaClient.js";
 
 const USDA_URL = "https://api.nal.usda.gov/fdc/v1/foods/search";
 const REQUEST_TIMEOUT_MS = 8000;
+
+// Global USDA client instance
+let usdaClient: USDAClient | null = null;
 
 /**
  * Nutrient number to name mapping
@@ -133,20 +139,56 @@ function mapFood(food: z.infer<typeof FoodSchema>): FoodSummary {
 }
 
 /**
+ * Generate normalized cache key from search params
+ */
+function getCacheKey(params: SearchParams): string {
+  // Normalize params for consistent cache keys
+  const normalized = {
+    q: (params.q || "").trim().toLowerCase(),
+    limit: params.limit || 10,
+    dataType: params.dataType?.sort().join(",") || "",
+  };
+  const keyStr = stringify(normalized);
+  return `usda:search:${Buffer.from(keyStr).toString("base64url")}`;
+}
+
+/**
+ * Get or create USDA client instance
+ */
+function getUSDAClient(): USDAClient {
+  if (!usdaClient) {
+    const config = getConfig();
+    usdaClient = new USDAClient(USDA_URL, config.USDA_API_KEY);
+  }
+  return usdaClient;
+}
+
+/**
  * Search foods in USDA FoodData Central
+ * Uses application cache to reduce API calls
+ * Uses resilient HTTP client with retry and circuit breaker
  * @param params - Search parameters
+ * @param abortSignal - Optional AbortSignal for request cancellation
  * @returns Search results with items and metadata
  * @throws {HttpError} On upstream errors or timeouts
  */
-export async function searchFoods(params: SearchParams): Promise<SearchResult> {
+export async function searchFoods(
+  params: SearchParams,
+  abortSignal?: AbortSignal
+): Promise<SearchResult> {
   const config = getConfig();
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  const cache = getCacheProvider(config);
+  const cacheKey = getCacheKey(params);
 
+  // Try cache first
+  const cached = await cache.get<SearchResult>(cacheKey);
+  if (cached) {
+    return cached;
+  }
+
+  // Cache miss: fetch from USDA API using resilient client
   try {
-    const url = new URL(USDA_URL);
-    url.searchParams.set("api_key", config.USDA_API_KEY);
-
+    const client = getUSDAClient();
     const requestBody = {
       query: params.q,
       pageSize: params.limit,
@@ -154,40 +196,24 @@ export async function searchFoods(params: SearchParams): Promise<SearchResult> {
       requireAllWords: false,
     };
 
-    const response = await fetch(url.toString(), {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(requestBody),
-      signal: controller.signal,
-    });
-
-    clearTimeout(timeout);
-
-    if (!response.ok) {
-      const errorText = await response.text().catch(() => "Unknown error");
-      throw HttpErrors.badGateway(
-        `USDA API returned ${response.status}`,
-        `Failed to fetch food data: ${errorText}`
-      );
-    }
-
-    const json = await response.json();
+    const json = await client.post("/foods/search", requestBody, abortSignal, REQUEST_TIMEOUT_MS);
     const parsed = SearchResponseSchema.parse(json);
 
     const items = parsed.foods.map(mapFood);
 
-    return {
+    const result: SearchResult = {
       items,
       meta: {
         totalHits: parsed.totalHits,
         limit: params.limit,
       },
     };
-  } catch (error) {
-    clearTimeout(timeout);
 
+    // Store in cache (use config TTL)
+    await cache.set(cacheKey, result, config.CACHE_TTL_MS);
+
+    return result;
+  } catch (error) {
     if (error instanceof z.ZodError) {
       throw HttpErrors.badGateway(
         "Invalid response from USDA API",
@@ -195,16 +221,12 @@ export async function searchFoods(params: SearchParams): Promise<SearchResult> {
       );
     }
 
+    // Re-throw HttpError instances
+    if (error instanceof HttpError) {
+      throw error;
+    }
+
     if (error instanceof Error) {
-      if (error.name === "AbortError") {
-        throw HttpErrors.serviceUnavailable("Request to USDA API timed out");
-      }
-
-      // Re-throw HttpError instances
-      if (error instanceof HttpError) {
-        throw error;
-      }
-
       throw HttpErrors.badGateway("Failed to fetch food data", error.message);
     }
 
