@@ -1,7 +1,11 @@
 import "dotenv/config";
+import { initTracing } from "./observability/tracing.js";
 import { loadConfig } from "./config/env.js";
 import { buildExpressApp } from "./server.js";
 import { logger } from "./middleware/requestLogger.js";
+
+// Initialize OpenTelemetry tracing (must be done before any other imports)
+initTracing();
 
 /**
  * Bootstrap the application

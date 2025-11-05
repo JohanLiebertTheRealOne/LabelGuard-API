@@ -155,7 +155,7 @@ export function validateLabel(input: {
 /**
  * Get allergen name variations for detection
  */
-function getAllergenVariations(allergen: string): string[] {
+export function getAllergenVariations(allergen: string): string[] {
   const variations: Record<string, string[]> = {
     milk: ["milk", "dairy", "lactose", "whey", "casein"],
     egg: ["egg", "eggs", "albumin", "lecithin"],

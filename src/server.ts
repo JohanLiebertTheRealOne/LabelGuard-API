@@ -12,6 +12,7 @@ import labelsRoutes from "./routes/labels.js";
 import v1Routes from "./routes/v1/index.js";
 import { apiVersioning } from "./middleware/versioning.js";
 import { abortController } from "./middleware/abortController.js";
+import { metricsMiddleware } from "./middleware/metricsMiddleware.js";
 
 // Swagger setup
 import swaggerUi from "swagger-ui-express";
@@ -37,6 +38,9 @@ export function buildExpressApp(providedConfig?: EnvConfig): Express {
 
   // Request logging (must come early)
   app.use(requestLogger);
+
+  // Metrics middleware (must come after requestLogger but before routes)
+  app.use(metricsMiddleware);
 
   // Body parsing
   app.use(express.json({ limit: "1mb" }));

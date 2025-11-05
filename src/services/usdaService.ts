@@ -177,7 +177,7 @@ export async function searchFoods(
   abortSignal?: AbortSignal
 ): Promise<SearchResult> {
   const config = getConfig();
-  const cache = getCacheProvider(config);
+  const cache = await getCacheProvider(config);
   const cacheKey = getCacheKey(params);
 
   // Try cache first

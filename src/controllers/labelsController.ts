@@ -4,6 +4,8 @@ import { searchFoods } from "../services/usdaService.js";
 import type { FoodSummary } from "../domain/food.js";
 import { validateLabel } from "../services/validationService.js";
 import { ValidationRequestSchema } from "../domain/validation.js";
+import { executeRules } from "../rules/index.js";
+import { getLocale } from "../i18n/index.js";
 
 /**
  * Validate food label endpoint handler
@@ -64,7 +66,7 @@ export async function validate(req: Request, res: Response, next: NextFunction):
       }
     }
 
-    // Perform validation
+    // Perform validation (base validation)
     const report = validateLabel({
       labelText: body.labelText,
       markets: body.markets,
@@ -74,7 +76,34 @@ export async function validate(req: Request, res: Response, next: NextFunction):
       contextFoods,
     });
 
-    res.json(report);
+    // Execute market-specific rules
+    const markets = body.markets || ["US"];
+    const ruleIssues = await executeRules(
+      {
+        labelText: body.labelText,
+        markets,
+        declaredAllergens: body.declaredAllergens,
+        servingSize: body.servingSize,
+        referenceFoodQuery: body.referenceFoodQuery,
+        claimTexts: body.claimTexts,
+      },
+      markets
+    );
+
+    // Merge rule issues with base validation issues
+    const allIssues = [...report.issues, ...ruleIssues];
+    const uniqueIssues = Array.from(
+      new Map(allIssues.map((issue) => [issue.id, issue])).values()
+    );
+
+    res.json({
+      ...report,
+      issues: uniqueIssues,
+      summary: {
+        ...report.summary,
+        totalIssues: uniqueIssues.length,
+      },
+    });
   } catch (error) {
     next(error);
   }
