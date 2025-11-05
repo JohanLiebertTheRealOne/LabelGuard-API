@@ -86,3 +86,27 @@ Set `OTEL_ENABLED=true` to enable distributed tracing. Configure exporters via O
 ## Troubleshooting
 
 See [TROUBLESHOOTING_VERCEL.md](./TROUBLESHOOTING_VERCEL.md) for common issues and solutions.
+
+## Déploiement Vercel
+
+### Configuration
+
+1. **Variables d'environnement** requises dans Vercel :
+   - `USDA_API_KEY` : Clé API USDA FoodData Central
+   - `API_KEYS` : Clés API séparées par virgules (optionnel, pour authentification)
+   - `CACHE_BACKEND` : `lru` (défaut), `kv`, ou `redis`
+   - `REDIS_URL` : Si `CACHE_BACKEND=redis`
+   - `RATE_LIMIT_MAX` : Nombre max de requêtes par fenêtre (défaut: 100)
+   - `RATE_LIMIT_WINDOW_MS` : Fenêtre de rate limiting en ms (défaut: 900000 = 15 min)
+
+2. **Node.js Version** : 20.x (défini dans `package.json`)
+
+3. **Build Command** : `npm run build` (automatique)
+
+4. **Output Directory** : `dist` (automatique pour serverless)
+
+### Note sur les dépendances
+
+- `zod-to-openapi` a été retiré car non compatible avec Zod 3.x
+- L'OpenAPI spec est maintenu manuellement dans `src/docs/openapiSpec.ts`
+- Si vous rencontrez des conflits de dépendances, Vercel utilisera automatiquement la résolution configurée
