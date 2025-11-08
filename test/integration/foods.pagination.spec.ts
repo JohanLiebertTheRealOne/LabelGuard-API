@@ -1,12 +1,16 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import request from "supertest";
 import { buildExpressApp } from "../../src/server.js";
-import { loadConfig } from "../../src/config/env.js";
+import { loadConfig, resetConfigForTesting } from "../../src/config/env.js";
 
 describe("Foods Pagination (v1)", () => {
   let app: ReturnType<typeof buildExpressApp>;
 
   beforeAll(() => {
+    resetConfigForTesting();
+    if (!process.env.USDA_API_KEY) {
+      process.env.USDA_API_KEY = "test-key";
+    }
     loadConfig();
     app = buildExpressApp();
   });

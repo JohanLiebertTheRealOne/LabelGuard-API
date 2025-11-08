@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, vi } from "vitest";
 import request from "supertest";
 import { buildExpressApp } from "../../src/server.js";
-import { loadConfig } from "../../src/config/env.js";
+import { loadConfig, resetConfigForTesting } from "../../src/config/env.js";
 
 // Mock fetch
 global.fetch = vi.fn();
@@ -10,6 +10,7 @@ describe("Foods endpoint", () => {
   let app: ReturnType<typeof buildExpressApp>;
 
   beforeAll(() => {
+    resetConfigForTesting();
     process.env.USDA_API_KEY = "test-key";
     process.env.NODE_ENV = "test";
     loadConfig();

@@ -1,11 +1,8 @@
 import type { Request, Response, NextFunction } from "express";
-import { z } from "zod";
-import { searchFoods } from "../services/usdaService.js";
-import type { FoodSummary } from "../domain/food.js";
 import { validateLabel } from "../services/validationService.js";
 import { ValidationRequestSchema } from "../domain/validation.js";
 import { executeRules } from "../rules/index.js";
-import { getLocale } from "../i18n/index.js";
+import { getLogger } from "../observability/logger.js";
 
 /**
  * Validate food label endpoint handler
@@ -51,29 +48,20 @@ export async function validate(req: Request, res: Response, next: NextFunction):
   try {
     const body = ValidationRequestSchema.parse(req.body);
 
-    // Optionally fetch USDA context foods if referenceFoodQuery is provided
-    let contextFoods: FoodSummary[] = [];
-    if (body.referenceFoodQuery) {
-      try {
-        const { items } = await searchFoods({
-          q: body.referenceFoodQuery,
-          limit: 3,
-        });
-        contextFoods = items;
-      } catch (error) {
-        // Log error but continue validation without context
-        // In production, you might want to handle this differently
-      }
-    }
-
     // Perform validation (base validation)
-    const report = validateLabel({
+    const report = await validateLabel({
       labelText: body.labelText,
       markets: body.markets,
       declaredAllergens: body.declaredAllergens,
+      allergens: body.allergens,
+      ingredients: body.ingredients,
+      containsStatement: body.containsStatement,
       servingSize: body.servingSize,
       claimTexts: body.claimTexts,
-      contextFoods,
+      referenceFoodQuery: body.referenceFoodQuery,
+      productName: body.productName,
+      nutrition: body.nutrition,
+      glutenFree: body.glutenFree,
     });
 
     // Execute market-specific rules
@@ -84,7 +72,7 @@ export async function validate(req: Request, res: Response, next: NextFunction):
         markets,
         declaredAllergens: body.declaredAllergens,
         servingSize: body.servingSize,
-        referenceFoodQuery: body.referenceFoodQuery,
+      referenceFoodQuery: body.referenceFoodQuery,
         claimTexts: body.claimTexts,
       },
       markets
@@ -95,6 +83,20 @@ export async function validate(req: Request, res: Response, next: NextFunction):
     const uniqueIssues = Array.from(
       new Map(allIssues.map((issue) => [issue.id, issue])).values()
     );
+
+    const logger = getLogger();
+    const traceId = (req.headers["x-trace-id"] || req.headers["x-request-id"] || req.id || "unknown") as string;
+
+    logger.info("label.validation.completed", {
+      traceId,
+      markets,
+      allergensDetected: report.summary.allergensFound,
+      issues: report.issues,
+      issueCount: report.summary.totalIssues,
+      chosenFood: report.context?.chosen?.description,
+      hasContextFoods: Boolean(report.context?.foods?.length),
+      fdcWarnings: report.context?.warnings,
+    });
 
     res.json({
       ...report,

@@ -9,7 +9,15 @@ export type IssueSeverity = "low" | "medium" | "high";
 /**
  * Validation issue categories
  */
-export type IssueCategory = "allergen" | "serving" | "claims" | "format" | "ingredient";
+export type IssueCategory =
+  | "allergen"
+  | "serving"
+  | "claims"
+  | "format"
+  | "ingredient"
+  | "nutrition"
+  | "input"
+  | "system";
 
 /**
  * Validation issue schema
@@ -17,7 +25,16 @@ export type IssueCategory = "allergen" | "serving" | "claims" | "format" | "ingr
 export const IssueSchema = z.object({
   id: z.string(),
   severity: z.enum(["low", "medium", "high"]),
-  category: z.enum(["allergen", "serving", "claims", "format", "ingredient"]),
+  category: z.enum([
+    "allergen",
+    "serving",
+    "claims",
+    "format",
+    "ingredient",
+    "nutrition",
+    "input",
+    "system",
+  ]),
   message: z.string(),
   hint: z.string().optional(),
   regulationRef: z.string().optional(),
@@ -32,15 +49,59 @@ export const ValidationRequestSchema = z.object({
   labelText: z.string().min(1, "labelText is required"),
   markets: z.array(z.string()).default(["US"]).optional(),
   declaredAllergens: z.array(z.string()).optional(),
+  allergens: z.array(z.string()).optional(),
   productName: z.string().optional(),
   servingSize: z
     .object({
-      value: z.number().positive(),
-      unit: z.string().min(1),
+      value: z.number().finite().optional(),
+      unit: z.string().min(1).optional(),
     })
     .optional(),
   referenceFoodQuery: z.string().optional(),
   claimTexts: z.array(z.string()).optional(),
+  containsStatement: z.string().optional(),
+  ingredients: z.union([z.string(), z.array(z.string())]).optional(),
+  nutrition: z
+    .object({
+      calories: z
+        .object({
+          value: z.number().optional(),
+          unit: z.string().optional(),
+        })
+        .optional(),
+      protein: z
+        .object({
+          value: z.number().optional(),
+          unit: z.string().optional(),
+        })
+        .optional(),
+      fat: z
+        .object({
+          value: z.number().optional(),
+          unit: z.string().optional(),
+        })
+        .optional(),
+      carbs: z
+        .object({
+          value: z.number().optional(),
+          unit: z.string().optional(),
+        })
+        .optional(),
+      fiber: z
+        .object({
+          value: z.number().optional(),
+          unit: z.string().optional(),
+        })
+        .optional(),
+      sugar: z
+        .object({
+          value: z.number().optional(),
+          unit: z.string().optional(),
+        })
+        .optional(),
+    })
+    .optional(),
+  glutenFree: z.boolean().optional(),
 });
 
 export type ValidationRequest = z.infer<typeof ValidationRequestSchema>;
@@ -58,6 +119,7 @@ export type ValidationReport = {
   context?: {
     foods: FoodSummary[];
     chosen?: FoodSummary;
+    warnings?: string[];
   };
 };
 

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import request from "supertest";
 import { buildExpressApp } from "../../src/server.js";
-import { loadConfig } from "../../src/config/env.js";
+import { loadConfig, resetConfigForTesting } from "../../src/config/env.js";
 
 /**
  * Test E2E complet simulant un workflow réel d'utilisation de l'API
@@ -12,6 +12,7 @@ describe("E2E: Complete API Workflow", () => {
   const apiKey = "test-api-key-123";
 
   beforeAll(() => {
+    resetConfigForTesting();
     process.env.USDA_API_KEY = "test-key";
     process.env.NODE_ENV = "test";
     process.env.API_KEYS = apiKey;

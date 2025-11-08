@@ -32,7 +32,7 @@ Production-grade REST API for USDA food search and food label validation. Search
 │  │  - Error Handling             |  │
 │  └───────────────────────────────┘  │
 │                                     │
-│  ┌──────────┐  ┌──────────┐         │
+│  ┌──────────┐  ┌───────────┐        │
 │  │  Routes  │→ │Controllers│        │
 │  └──────────┘  └────┬──────┘        │
 │                     │               │

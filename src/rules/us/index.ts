@@ -51,23 +51,23 @@ export const validateServingSize: RuleFunction = (request): Issue[] => {
 
   if (request.servingSize) {
     const { value, unit } = request.servingSize;
-    const unitLower = unit.toLowerCase();
+    const unitLower = unit?.toLowerCase();
 
     // US standard units
     const validUnits = ["g", "kg", "ml", "l", "oz", "fl oz", "cup", "tbsp", "tsp"];
 
-    if (!validUnits.includes(unitLower)) {
+    if (!unitLower || !validUnits.includes(unitLower)) {
       issues.push({
         id: "US_INVALID_SERVING_SIZE_UNIT",
         severity: "medium",
         category: "serving",
-        message: `Serving size unit '${unit}' may not be a standard US unit.`,
+        message: `Serving size unit '${unit ?? "unspecified"}' may not be a standard US unit.`,
         hint: "Use standard US units: g, kg, ml, l, oz, fl oz, cup, tbsp, tsp",
       });
     }
 
     // Serving size should be reasonable
-    if (unitLower === "g" && (value < 1 || value > 1000)) {
+    if (unitLower === "g" && typeof value === "number" && (value < 1 || value > 1000)) {
       issues.push({
         id: "US_UNUSUAL_SERVING_SIZE",
         severity: "low",

@@ -1,7 +1,11 @@
-import { describe, it, expect } from "vitest";
-import { loadConfig } from "../../src/config/env.js";
+import { describe, it, expect, beforeEach } from "vitest";
+import { loadConfig, resetConfigForTesting } from "../../src/config/env.js";
 
 describe("config", () => {
+  beforeEach(() => {
+    resetConfigForTesting();
+  });
+
   it("should load valid configuration", () => {
     process.env.USDA_API_KEY = "test-key";
     process.env.PORT = "3000";

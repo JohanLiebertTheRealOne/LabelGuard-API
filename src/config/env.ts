@@ -59,3 +59,10 @@ export function getConfig(): EnvConfig {
   return config;
 }
 
+/**
+ * Reset configuration cache (useful for tests)
+ */
+export function resetConfigForTesting(): void {
+  config = null;
+}
+

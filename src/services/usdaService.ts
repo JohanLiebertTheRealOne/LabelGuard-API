@@ -102,7 +102,7 @@ function findNutrient(
 /**
  * Map USDA Food to clean FoodSummary
  */
-function mapFood(food: z.infer<typeof FoodSchema>): FoodSummary {
+export function mapUSDAFoodToSummary(food: z.infer<typeof FoodSchema>): FoodSummary {
   const nutrients = food.foodNutrients || [];
 
   // Extract energy (calories)
@@ -199,7 +199,7 @@ export async function searchFoods(
     const json = await client.post("/foods/search", requestBody, abortSignal, REQUEST_TIMEOUT_MS);
     const parsed = SearchResponseSchema.parse(json);
 
-    const items = parsed.foods.map(mapFood);
+    const items = parsed.foods.map(mapUSDAFoodToSummary);
 
     const result: SearchResult = {
       items,

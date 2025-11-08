@@ -1,13 +1,17 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import request from "supertest";
 import { buildExpressApp } from "../../src/server.js";
-import { loadConfig } from "../../src/config/env.js";
+import { loadConfig, resetConfigForTesting } from "../../src/config/env.js";
 
 describe("Foods HTTP Cache (v1)", () => {
   let app: ReturnType<typeof buildExpressApp>;
   const apiKey = process.env.API_KEYS?.split(",")[0] || "test-key";
 
   beforeAll(() => {
+    resetConfigForTesting();
+    if (!process.env.USDA_API_KEY) {
+      process.env.USDA_API_KEY = "test-key";
+    }
     loadConfig();
     app = buildExpressApp();
   });

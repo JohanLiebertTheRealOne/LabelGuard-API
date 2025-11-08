@@ -1,11 +1,36 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import fc from "fast-check";
 import { validateLabel } from "../../src/services/validationService.js";
+import { fetchAndValidateFromFDC } from "../../src/services/claimsValidation.js";
+
+vi.mock("../../src/services/claimsValidation.js", () => ({
+  fetchAndValidateFromFDC: vi.fn().mockResolvedValue({
+    issues: [],
+    foods: [],
+    chosenFood: undefined,
+    macros: {},
+    source: "none",
+    warnings: [],
+  }),
+}));
+
+const mockedFetch = vi.mocked(fetchAndValidateFromFDC);
+
+beforeEach(() => {
+  mockedFetch.mockResolvedValue({
+    issues: [],
+    foods: [],
+    chosenFood: undefined,
+    macros: {},
+    source: "none",
+    warnings: [],
+  });
+});
 
 describe("Validation Property-Based Tests", () => {
-  it("should always return a valid report structure", () => {
-    fc.assert(
-      fc.property(
+  it("should always return a valid report structure", async () => {
+    await fc.assert(
+      fc.asyncProperty(
         fc.string({ minLength: 1 }),
         fc.array(fc.string()),
         fc.option(
@@ -14,8 +39,8 @@ describe("Validation Property-Based Tests", () => {
             unit: fc.constantFrom("g", "kg", "ml", "l", "oz"),
           })
         ),
-        (labelText, declaredAllergens, servingSize) => {
-          const report = validateLabel({
+        async (labelText, declaredAllergens, servingSize) => {
+          const report = await validateLabel({
             labelText,
             declaredAllergens,
             servingSize: servingSize || undefined,
@@ -33,13 +58,13 @@ describe("Validation Property-Based Tests", () => {
     );
   });
 
-  it("should have valid=true when no issues found", () => {
-    fc.assert(
-      fc.property(
+  it("should have valid=true when no issues found", async () => {
+    await fc.assert(
+      fc.asyncProperty(
         fc.string({ minLength: 1 }),
-        (labelText) => {
+        async (labelText) => {
           // Simple label with no allergens should be valid
-          const report = validateLabel({
+          const report = await validateLabel({
             labelText: `Ingredients: ${labelText}`,
             declaredAllergens: [],
           });
@@ -53,13 +78,13 @@ describe("Validation Property-Based Tests", () => {
     );
   });
 
-  it("should have valid=false when issues are present", () => {
-    fc.assert(
-      fc.property(
+  it("should have valid=false when issues are present", async () => {
+    await fc.assert(
+      fc.asyncProperty(
         fc.string({ minLength: 1 }),
-        (labelText) => {
+        async (labelText) => {
           // Label mentioning milk but not declaring it
-          const report = validateLabel({
+          const report = await validateLabel({
             labelText: `Ingredients: ${labelText}, milk`,
             declaredAllergens: [],
           });

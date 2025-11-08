@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import request from "supertest";
 import { buildExpressApp } from "../../src/server.js";
-import { loadConfig } from "../../src/config/env.js";
+import { loadConfig, resetConfigForTesting } from "../../src/config/env.js";
 import { initializeRules, executeRules } from "../../src/rules/index.js";
 import type { ValidationRequest } from "../../src/domain/validation.js";
 
@@ -9,6 +9,7 @@ describe("Rules Engine (Feature E)", () => {
   let app: ReturnType<typeof buildExpressApp>;
 
   beforeAll(() => {
+    resetConfigForTesting();
     process.env.USDA_API_KEY = "test-key";
     process.env.NODE_ENV = "test";
     process.env.API_KEYS = "test-api-key-123";
